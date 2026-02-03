@@ -1,6 +1,25 @@
 [build]
   command = "npm run build"
-  publish = "dist"
+  publish = ".output/public"
 
-[dev]
-  command = "npm run dev"
+# Exclude service worker and manifest from redirects
+[[redirects]]
+  from = "/sw.js"
+  to = "/sw.js"
+  status = 200
+
+[[redirects]]
+  from = "/workbox-*.js"
+  to = "/workbox-:splat.js"
+  status = 200
+
+[[redirects]]
+  from = "/manifest.webmanifest"
+  to = "/manifest.webmanifest"
+  status = 200
+
+# SPA fallback for all other routes
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
