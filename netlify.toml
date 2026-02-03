@@ -1,13 +1,14 @@
 [build]
   # Manual directory traversal to ensure correct context
   command = "cd VueApp && npm install && npm run build"
-  publish = "VueApp/.output/public"
+  # Nitro netlify-legacy preset outputs to 'dist', not '.output/public'
+  publish = "VueApp/dist"
 
 [build.environment]
   NODE_VERSION = "22"
   NPM_CONFIG_LEGACY_PEER_DEPS = "true"
   NODE_OPTIONS = "--max-old-space-size=4096"
-  NITRO_PRESET = "netlify"
+  NITRO_PRESET = "netlify-legacy"
 
 # Exclude service worker and manifest from redirects
 [[redirects]]
