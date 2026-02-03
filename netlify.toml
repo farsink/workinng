@@ -1,8 +1,8 @@
 [build]
   # Use nuxt generate for static site generation (better for PWA)
   command = "cd VueApp && npm install && npm run generate"
-  # Static generation outputs to dist
-  publish = "VueApp/dist"
+  # Static preset outputs to .output/public
+  publish = "VueApp/.output/public"
 
 [build.environment]
   NODE_VERSION = "22"
