@@ -1,9 +1,11 @@
 [build]
+  base = "VueApp"
   command = "npm run build"
   publish = ".output/public"
 
 [build.environment]
   NPM_CONFIG_LEGACY_PEER_DEPS = "true"
+  NITRO_PRESET = "netlify"
 
 # Exclude service worker and manifest from redirects
 [[redirects]]
