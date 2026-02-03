@@ -2,8 +2,13 @@
 export default defineNuxtConfig({
   compatibilityDate: '2024-04-03',
   devtools: { enabled: true },
-  ssr: true, // Universal Mode (SSR + Client Hydration)
+  ssr: false, // Disable SSR for static PWA
   srcDir: 'app', // Set app as the source directory
+
+  // Force static preset to avoid Netlify server functions
+  nitro: {
+    preset: 'static'
+  },
 
   modules: [
     '@vite-pwa/nuxt',
