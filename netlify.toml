@@ -1,13 +1,14 @@
 [build]
-  # We run commands from root to correctly handle the directory context
+  # Manual directory traversal to ensure correct context
   command = "cd VueApp && npm install && npm run build"
   publish = "VueApp/.output/public"
 
 [build.environment]
+  NODE_VERSION = "22"
   NPM_CONFIG_LEGACY_PEER_DEPS = "true"
   NODE_OPTIONS = "--max-old-space-size=4096"
-  # Let Nuxt auto-detect the preset
-  
+  NITRO_PRESET = "netlify"
+
 # Exclude service worker and manifest from redirects
 [[redirects]]
   from = "/sw.js"
