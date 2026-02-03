@@ -9,7 +9,7 @@ export default defineNuxtConfig({
     '@vite-pwa/nuxt',
     '@pinia/nuxt',
     '@nuxtjs/tailwindcss',
-    '@pinia-plugin-persistedstate/nuxt'
+    'pinia-plugin-persistedstate/nuxt'
   ],
 
   pwa: {
