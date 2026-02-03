@@ -1,14 +1,13 @@
 [build]
-  # Manual directory traversal to ensure correct context
-  command = "cd VueApp && npm install && npm run build"
-  # Nitro netlify-legacy preset outputs to 'dist', not '.output/public'
+  # Use nuxt generate for static site generation (better for PWA)
+  command = "cd VueApp && npm install && npm run generate"
+  # Static generation outputs to dist
   publish = "VueApp/dist"
 
 [build.environment]
   NODE_VERSION = "22"
   NPM_CONFIG_LEGACY_PEER_DEPS = "true"
   NODE_OPTIONS = "--max-old-space-size=4096"
-  NITRO_PRESET = "netlify-legacy"
 
 # Exclude service worker and manifest from redirects
 [[redirects]]
@@ -26,7 +25,7 @@
   to = "/manifest.webmanifest"
   status = 200
 
-# SPA fallback for all other routes
+# SPA fallback for client-side routing
 [[redirects]]
   from = "/*"
   to = "/index.html"
