@@ -13,33 +13,36 @@
         :class="{ 'relative': day.isToday }"
         @click="$emit('select-day', day.date)"
       >
-        <div v-if="day.isToday" class="absolute -bottom-2 w-1 h-1 bg-primary rounded-full"></div>
-        
         <span 
           class="text-[10px] font-medium transition-colors"
-          :class="day.isToday ? 'text-primary font-bold' : day.hours > 0 ? 'text-base-content/60 group-hover:text-base-content' : 'text-base-content/40'"
+          :class="day.isToday ? 'text-primary font-bold' : day.hours > 0 ? 'text-base-content/60 group-hover:text-base-content' : 'text-base-content/20'"
         >
           {{ day.hours > 0 ? `${day.hours}h` : '' }}
         </span>
         
         <div 
-          class="w-full rounded-t-md rounded-b-sm transition-all relative flex items-end justify-center pb-1"
+          class="w-full rounded-t-lg rounded-b-sm transition-all relative flex items-end justify-center pb-2 border border-transparent"
           :class="[
-            day.isToday ? 'border-2 border-primary bg-primary/10' : day.hours >= 8 ? 'bg-secondary opacity-90 group-hover:opacity-100' : day.hours > 0 ? 'bg-secondary opacity-90 group-hover:opacity-100' : 'bg-base-content/5 hover:bg-base-content/10'
+            day.isToday ? 'border-primary/40 bg-primary/20 shadow-[0_0_15px_rgba(236,218,19,0.1)]' : 
+            day.hours > 0 ? 'bg-secondary border-secondary/50 group-hover:bg-secondary/80 group-hover:border-secondary' : 
+            day.isPast ? 'bg-error/30 border border-error' :
+            'bg-base-content/5 hover:bg-base-content/10 border-base-content/5'
           ]"
-          :style="{ height: day.hours > 0 ? `${Math.max(day.percentage, 10)}%` : '100%' }"
+          :style="{ height: day.hours > 0 ? `${Math.min(Math.max(day.percentage, 15), 100)}%` : '8%' }"
         >
-          <div v-if="day.isToday" class="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></div>
-          <div v-else-if="day.isCompleted" class="absolute bottom-1 w-full flex justify-center text-base-300/40">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
+          <div v-if="day.isToday" class="w-1.5 h-1.5 bg-primary rounded-full animate-pulse shadow-[0_0_8px_rgba(236,218,19,0.6)]"></div>
+          <div v-else-if="day.isCompleted" class="absolute bottom-2 w-full flex justify-center text-primary/40">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
             </svg>
           </div>
         </div>
 
+        <div v-if="day.isToday" class="absolute -bottom-2 w-1 h-1 bg-primary rounded-full"></div>
+
         <span 
           class="text-xs font-medium transition-colors"
-          :class="day.isToday ? 'text-base-content font-bold' : 'text-base-content/60'"
+          :class="day.isToday ? 'text-primary font-bold' : 'text-base-content/60'"
         >
           {{ day.label }}
         </span>
@@ -50,6 +53,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useTimeEntriesStore } from '@/stores/timeEntries'
 
 const props = defineProps<{
   selectedDate: string
@@ -58,6 +62,8 @@ const props = defineProps<{
 defineEmits<{
   (e: 'select-day', date: string): void
 }>()
+
+const store = useTimeEntriesStore()
 
 const weekDays = computed(() => {
   const days = []
@@ -70,18 +76,22 @@ const weekDays = computed(() => {
     d.setDate(today.getDate() + mondayOffset + i)
     
     const dateStr = d.toISOString().split('T')[0] || ''
-    const isToday = dateStr === new Date().toISOString().split('T')[0]
+    const isToday = dateStr === (new Date().toISOString().split('T')[0] || '')
+    const isPast = dateStr < (new Date().toISOString().split('T')[0] || '')
     
-    // Mock data for visualization - replace with store data later
-    const hours = isToday ? 6.5 : i < 2 ? Math.floor(Math.random() * 3) + 7 : 0
+    // Get real duration from store
+    const durationMs = store.getTotalDurationForDay(dateStr)
+    const hours = durationMs / (1000 * 60 * 60)
+    const roundedHours = Math.round(hours * 10) / 10 // Round to 1 decimal place
     
     days.push({
       date: dateStr,
       label: d.toLocaleDateString('en-US', { weekday: 'short' }),
-      hours,
-      percentage: (hours / 12) * 100, // Scale based on 12h max
+      hours: roundedHours,
+      percentage: Math.min((roundedHours / 12) * 100, 100), // Cap at 100%
       isToday,
-      isCompleted: hours >= 8
+      isPast,
+      isCompleted: roundedHours >= 8
     })
   }
   return days

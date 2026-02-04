@@ -4,6 +4,10 @@ export default {
     extend: {
       colors: {
         primary: '#ecda13',
+        error: '#f87272',
+        success: '#36d399',
+        warning: '#fbbd23',
+        info: '#3abff8',
         'background-light': '#f8f8f6',
         'background-dark': '#222010',
         'surface-dark': '#2c2a1a',

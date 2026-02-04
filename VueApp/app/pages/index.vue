@@ -38,16 +38,21 @@ const todaysEntries = computed(() => store.getEntriesForDay(selectedDate.value))
 const todaysDuration = computed(() => store.getTotalDurationForDay(selectedDate.value))
 
 const openAddModal = () => {
-  addModal.value?.open()
+  // Pass the first entry of the day if it exists, to populate the form
+  const currentEntry = todaysEntries.value[0]
+  addModal.value?.open(currentEntry)
 }
 
 const handleSelectDay = (date: string) => {
   selectedDate.value = date
 }
 
-const handleSaveEntry = (times: { start: string, end: string }) => {
-  const [startHour, startMinute] = times.start.split(':').map(Number)
-  const [endHour, endMinute] = times.end.split(':').map(Number)
+const handleSaveEntry = (payload: any) => {
+  // payload: { date, startTime, endTime, hoursWorked, tasks, isWeekend, ... } 
+  // startTime/endTime are strings "HH:mm"
+  
+  const [startHour, startMinute] = payload.startTime.split(':').map(Number)
+  const [endHour, endMinute] = payload.endTime.split(':').map(Number)
 
   if (
     startHour === undefined || startMinute === undefined || 
@@ -61,13 +66,19 @@ const handleSaveEntry = (times: { start: string, end: string }) => {
   const startTime = new Date(date)
   startTime.setHours(startHour, startMinute, 0, 0)
 
+  // Handle overnight: if end time < start time (e.g. 02:00 < 22:00), it's next day
   const endTime = new Date(date)
   endTime.setHours(endHour, endMinute, 0, 0)
+  
+  if (endTime < startTime) {
+      endTime.setDate(endTime.getDate() + 1);
+  }
 
-  store.addEntry({
-    date: selectedDate.value,
+  store.saveEntryForDay(selectedDate.value, {
     startTime: startTime.getTime(),
-    endTime: endTime.getTime()
+    endTime: endTime.getTime(),
+    tasks: payload.tasks,
+    isOvertime: payload.isWeekend // Mapping isWeekend (from form) to isOvertime (store)
   })
 }
 </script>

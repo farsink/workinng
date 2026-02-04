@@ -6,6 +6,8 @@ export interface TimeEntry {
   startTime: number // timestamp
   endTime?: number // timestamp
   date: string // YYYY-MM-DD
+  tasks?: string
+  isOvertime?: boolean
 }
 
 export const useTimeEntriesStore = defineStore('timeEntries', () => {
@@ -43,10 +45,24 @@ export const useTimeEntriesStore = defineStore('timeEntries', () => {
     }, 0)
   }
 
+  const saveEntryForDay = (date: string, data: Omit<TimeEntry, 'id' | 'date'>) => {
+    const dayEntries = getEntriesForDay(date)
+    if (dayEntries.length > 0) {
+      // For now, we update the first entry found for that day to match requested behavior
+      const firstEntry = dayEntries[0]
+      if (firstEntry) {
+        updateEntry(firstEntry.id, data)
+      }
+    } else {
+      addEntry({ ...data, date })
+    }
+  }
+
   return {
     entries,
     addEntry,
     updateEntry,
+    saveEntryForDay,
     getEntriesForDay,
     getTotalDurationForDay
   }

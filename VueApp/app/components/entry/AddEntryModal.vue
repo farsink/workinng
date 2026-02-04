@@ -1,63 +1,49 @@
 <template>
   <dialog ref="modal" class="modal modal-bottom sm:modal-middle">
-    <div class="modal-box bg-base-200 border border-base-content/10">
-      <h3 class="font-bold text-lg mb-6 text-base-content">Add Time Entry</h3>
+    <!-- Modal Box: Dark theme, bottom sheet rounded top corners -->
+    <div class="modal-box bg-[#121212] border-t border-white/10 p-0 overflow-hidden h-[90vh] sm:h-auto sm:max-h-[90vh] sm:rounded-2xl rounded-t-2xl shadow-2xl">
       
-      <div class="flex gap-4 justify-center mb-8">
-        <div class="flex flex-col items-center">
-          <label class="text-base-content/60 text-sm mb-2">Start Time</label>
-          <input 
-            type="time" 
-            v-model="startTime" 
-            class="input input-bordered input-lg w-full max-w-xs text-center font-mono bg-base-content/5 border-base-content/10 text-base-content focus:border-primary"
-          />
-        </div>
-        <div class="flex flex-col items-center">
-          <label class="text-base-content/60 text-sm mb-2">End Time</label>
-          <input 
-            type="time" 
-            v-model="endTime" 
-            class="input input-bordered input-lg w-full max-w-xs text-center font-mono bg-base-content/5 border-base-content/10 text-base-content focus:border-primary"
-          />
-        </div>
+      <!-- Drag Handle -->
+      <div class="w-full flex justify-center pt-3 pb-1 bg-[#121212]">
+        <div class="w-12 h-1.5 rounded-full bg-[#3A3A3C]"></div>
       </div>
 
-      <div class="modal-action">
-        <form method="dialog">
-          <button class="btn btn-ghost text-base-content/60 mr-2">Cancel</button>
-          <button class="btn btn-primary text-base-100 hover:brightness-110 px-8 border-none" @click="save">Save</button>
-        </form>
+      <!-- Content -->
+      <div class="h-full overflow-y-auto">
+        <TimeEntryForm :initial-data="initialData" @save="handleSave" />
       </div>
+
     </div>
-    <form method="dialog" class="modal-backdrop bg-black/60">
+    
+    <!-- Backdrop -->
+    <form method="dialog" class="modal-backdrop bg-black/60 backdrop-blur-sm">
       <button>close</button>
     </form>
   </dialog>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref } from 'vue';
+import TimeEntryForm from '@/components/TimeEntryForm.vue';
 
-const modal = ref<HTMLDialogElement | null>(null)
-const startTime = ref('09:00')
-const endTime = ref('17:00')
+const modal = ref<HTMLDialogElement | null>(null);
+const initialData = ref<any>(null);
 
 const emit = defineEmits<{
-  (e: 'save', entry: { start: string, end: string }): void
-}>()
+  (e: 'save', entry: any): void
+}>();
 
-const open = () => {
-  modal.value?.showModal()
-}
+const open = (data?: any) => {
+  initialData.value = data || null;
+  modal.value?.showModal();
+};
 
-const save = () => {
-  emit('save', {
-    start: startTime.value,
-    end: endTime.value
-  })
-}
+const handleSave = (entry: any) => {
+  emit('save', entry);
+  modal.value?.close();
+};
 
 defineExpose({
   open
-})
+});
 </script>

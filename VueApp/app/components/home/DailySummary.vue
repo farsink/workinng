@@ -6,7 +6,7 @@
         {{ hours }}<span class="text-4xl align-top pt-2 inline-block">h</span> {{ minutes }}<span class="text-4xl align-top pt-2 inline-block">m</span>
       </h1>
     </div>
-    <p class="text-base-content/60 text-base font-medium mt-2">Worked today</p>
+    <p class="text-base-content/40 text-base text-white/55 font-medium mt-2">Worked today</p>
   </div>
 </template>
 
