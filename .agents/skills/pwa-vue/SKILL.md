@@ -359,3 +359,5 @@ Update the checkboxes in text and add 1–2 lines explaining any adjustments.
 
 - `scripts/pwa-audit.sh`: Simple helper to audit PWA-related files and configs (run with `--help` if uncertain).
 - `resources/vue-structure-example.md`: Example Vue 3 PWA project structure and key files.
+- `resources/vue-pwa-nuxt-frontend.md`: Nuxt-specific PWA configuration and patterns (use when project involves Nuxt 3/4).
+- `resources/dexie-postgres-pinia.md`: Dexie.js, PostgreSQL (via Dexie Cloud), and Pinia integration patterns for robust offline-first state management.
