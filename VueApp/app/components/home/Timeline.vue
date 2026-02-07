@@ -6,7 +6,10 @@
       <span>24:00</span>
     </div>
     
-    <div class="relative h-12 bg-base-content/5 rounded-2xl w-full flex items-center overflow-hidden border border-base-content/5">
+    <div 
+      class="relative h-12 bg-base-content/5 rounded-2xl w-full flex items-center overflow-hidden border border-base-content/5 cursor-pointer hover:bg-base-content/10 transition-colors"
+      @click="handleTimelineClick"
+    >
       <!-- Background blocks (4 segments) -->
       <div class="absolute inset-0 flex w-full h-full pointer-events-none px-[2px]">
         <div v-for="i in 4" :key="i" class="flex-1 h-full flex items-center justify-end">
@@ -14,16 +17,21 @@
         </div>
       </div>
 
+      <!-- Empty state hint -->
+      <div v-if="segments.length === 0" class="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <span class="text-base-content/30 text-sm font-medium">Click to add entry</span>
+      </div>
+
       <!-- Time segments -->
       <div 
         v-for="segment in segments" 
         :key="segment.id"
-        class="absolute h-8 bg-primary rounded-lg shadow-[0_0_15px_rgba(236,218,19,0.3)] flex items-center justify-center group cursor-pointer transition-all hover:brightness-110"
+        class="absolute h-8 bg-primary rounded-lg shadow-[0_0_15px_rgba(236,218,19,0.3)] flex items-center justify-center group cursor-pointer transition-all hover:brightness-110 z-10"
         :style="{
           left: `${segment.startPercent}%`,
           width: `${segment.widthPercent}%`
         }"
-        @click="$emit('edit-entry', findEntry(segment.id))"
+        @click.stop="$emit('edit-entry', findEntry(segment.id as string))"
       >
         <div class="hidden group-hover:flex absolute -top-10 bg-surface-dark px-2 py-1 rounded text-xs text-primary border border-primary/20 whitespace-nowrap z-20">
           {{ segment.startTime }} - {{ segment.endTime }}
@@ -31,7 +39,7 @@
       </div>
     </div>
 
-    <div class="relative h-6 w-full text-sm font-medium text-primary">
+    <!-- <div class="relative h-6 w-full text-sm font-medium text-primary">
       <span 
         v-for="(marker, index) in uniqueTimeMarkers" 
         :key="'marker-' + index"
@@ -40,13 +48,13 @@
       >
         {{ marker.time }}
       </span>
-    </div>
+    </div> -->
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { TimeEntry } from '@/stores/timeEntries'
+import type { TimeEntry } from '@/utils/db'
 
 const props = defineProps<{
   entries: TimeEntry[]
@@ -54,9 +62,15 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'edit-entry', entry: TimeEntry | undefined): void
+  (e: 'add-entry'): void
 }>()
 
 const findEntry = (id: string) => props.entries.find(e => e.id === id)
+
+const handleTimelineClick = () => {
+  // Emit add-entry event when clicking on empty timeline or blank areas
+  emit('add-entry')
+}
 
 const segments = computed(() => {
   return props.entries.map(entry => {

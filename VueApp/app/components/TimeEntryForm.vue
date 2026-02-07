@@ -163,10 +163,14 @@
 import { ref, computed, watch } from 'vue';
 
 const props = defineProps<{
-  initialData?: any; 
+  initialData?: any;
+  selectedDate?: string;
 }>();
 
 const emit = defineEmits(['save', 'cancel']);
+
+// Session ID (if editing)
+const entryId = ref<string | null>(null);
 
 // Date state
 const date = ref(new Date());
@@ -249,6 +253,7 @@ const saveEntry = () => {
     const totalHours = calculatedDurationMinutes.value / 60;
     
     emit('save', {
+        id: entryId.value, // Include ID if editing
         date: date.value.toISOString().split('T')[0],
         startTime: `${formatNumber(startHour.value)}:${formatNumber(startMinute.value)}`,
         endTime: `${formatNumber(endHour.value)}:${formatNumber(endMinute.value)}`,
@@ -261,7 +266,30 @@ const saveEntry = () => {
 };
 
 const hydrate = (data: any) => {
-    if (!data) return;
+    if (!data) {
+        // Reset form for new entry
+        entryId.value = null;
+        
+        // Use selectedDate if provided, otherwise use today
+        if (props.selectedDate) {
+            date.value = new Date(props.selectedDate);
+        } else {
+            date.value = new Date();
+        }
+        
+        const now = new Date();
+        // Default to a 1-hour slot starting now or at 17:00 if it's "mostly after 17"
+        const currentHour = now.getHours();
+        startHour.value = currentHour >= 17 ? currentHour : 9;
+        startMinute.value = 0;
+        endHour.value = startHour.value + 1;
+        endMinute.value = 0;
+        notes.value = '';
+        isOvertime.value = false;
+        return;
+    }
+    
+    entryId.value = data.id || null;
     
     if (data.startTime) {
         const d = new Date(data.startTime);
@@ -284,12 +312,11 @@ const hydrate = (data: any) => {
     }
 }
 
-// Watch for initialData changes
+// Watch for initialData changes - ALWAYS call hydrate to reset form state
 watch(() => props.initialData, (newData) => {
-    if (newData) {
-        hydrate(newData);
-    }
-}, { immediate: true });
+    hydrate(newData)
+}, { immediate: true })
+;
 
 </script>
 

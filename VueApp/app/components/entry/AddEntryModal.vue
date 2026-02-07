@@ -10,7 +10,7 @@
 
       <!-- Content -->
       <div class="h-full overflow-y-auto">
-        <TimeEntryForm :initial-data="initialData" @save="handleSave" />
+        <TimeEntryForm :initial-data="initialData" :selected-date="selectedDate" @save="handleSave" />
       </div>
 
     </div>
@@ -28,6 +28,10 @@ import TimeEntryForm from '@/components/TimeEntryForm.vue';
 
 const modal = ref<HTMLDialogElement | null>(null);
 const initialData = ref<any>(null);
+
+const props = defineProps<{
+  selectedDate?: string
+}>()
 
 const emit = defineEmits<{
   (e: 'save', entry: any): void
