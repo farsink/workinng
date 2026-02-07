@@ -23,6 +23,7 @@
           left: `${segment.startPercent}%`,
           width: `${segment.widthPercent}%`
         }"
+        @click="$emit('edit-entry', findEntry(segment.id))"
       >
         <div class="hidden group-hover:flex absolute -top-10 bg-surface-dark px-2 py-1 rounded text-xs text-primary border border-primary/20 whitespace-nowrap z-20">
           {{ segment.startTime }} - {{ segment.endTime }}
@@ -50,6 +51,12 @@ import type { TimeEntry } from '@/stores/timeEntries'
 const props = defineProps<{
   entries: TimeEntry[]
 }>()
+
+const emit = defineEmits<{
+  (e: 'edit-entry', entry: TimeEntry | undefined): void
+}>()
+
+const findEntry = (id: string) => props.entries.find(e => e.id === id)
 
 const segments = computed(() => {
   return props.entries.map(entry => {

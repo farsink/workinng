@@ -1,5 +1,5 @@
 <template>
-  <div class="h-full bg-[#121212] text-white font-sans p-6 pb-24 relative overflow-y-auto flex flex-col">
+  <div class="min-h-full bg-[#121212] text-white font-sans p-6 pb-24 relative flex flex-col">
     <!-- header -->
     <div class="mb-8">
       <h1 class="text-3xl font-bold mb-1 track-tight">Log Work</h1>

@@ -5,7 +5,7 @@
     <main class="flex-1 flex flex-col gap-8 pb-40">
       <DailySummary :duration-ms="todaysDuration" />
 
-      <Timeline :entries="todaysEntries" />
+      <Timeline :entries="todaysEntries" @edit-entry="openAddModal" />
 
       <WeekIndicator 
         :selected-date="selectedDate"
@@ -16,6 +16,8 @@
     <BottomNav @add="openAddModal" />
 
     <AddEntryModal ref="addModal" @save="handleSaveEntry" />
+    
+
   </div>
 </template>
 
@@ -29,6 +31,7 @@ import WeekIndicator from '@/components/home/WeekIndicator.vue'
 import BottomNav from '@/components/layout/BottomNav.vue'
 import AddEntryModal from '@/components/entry/AddEntryModal.vue'
 
+
 const store = useTimeEntriesStore()
 const addModal = ref<InstanceType<typeof AddEntryModal> | null>(null)
 const selectedDate = ref<string>(new Date().toISOString().split('T')[0] || '')
@@ -37,10 +40,22 @@ const syncStatus = ref<'synced' | 'syncing' | 'offline'>('synced')
 const todaysEntries = computed(() => store.getEntriesForDay(selectedDate.value))
 const todaysDuration = computed(() => store.getTotalDurationForDay(selectedDate.value))
 
-const openAddModal = () => {
-  // Pass the first entry of the day if it exists, to populate the form
-  const currentEntry = todaysEntries.value[0]
-  addModal.value?.open(currentEntry)
+const openAddModal = (entryToEdit?: any) => {
+  // If entryToEdit is passed (from timeline click), use it.
+  // Otherwise try to default to today's first entry (legacy behavior) or just null for new.
+  // The 'add' button calls this with an Event object, so check type.
+  
+  let entry = null
+  
+  if (entryToEdit && entryToEdit.id) {
+     // It's a real entry object
+     entry = entryToEdit
+  } else {
+     // It's a click on (+) button
+     entry = todaysEntries.value[0] || null
+  }
+
+  addModal.value?.open(entry)
 }
 
 const handleSelectDay = (date: string) => {
@@ -48,6 +63,8 @@ const handleSelectDay = (date: string) => {
 }
 
 const handleSaveEntry = (payload: any) => {
+  console.log('[Index Page] handleSaveEntry called', { payload, selectedDate: selectedDate.value })
+  
   // payload: { date, startTime, endTime, hoursWorked, tasks, isWeekend, ... } 
   // startTime/endTime are strings "HH:mm"
   
@@ -58,6 +75,7 @@ const handleSaveEntry = (payload: any) => {
     startHour === undefined || startMinute === undefined || 
     endHour === undefined || endMinute === undefined
   ) {
+    console.error('[Index Page] Invalid time values', { startHour, startMinute, endHour, endMinute })
     return
   }
 
@@ -74,11 +92,26 @@ const handleSaveEntry = (payload: any) => {
       endTime.setDate(endTime.getDate() + 1);
   }
 
+  console.log('[Index Page] Prepared time data', {
+    date: selectedDate.value,
+    startTime: startTime.toLocaleString(),
+    endTime: endTime.toLocaleString(),
+    startTimestamp: startTime.getTime(),
+    endTimestamp: endTime.getTime(),
+    tasks: payload.tasks,
+    isOvertime: payload.isWeekend
+  })
+
   store.saveEntryForDay(selectedDate.value, {
     startTime: startTime.getTime(),
     endTime: endTime.getTime(),
     tasks: payload.tasks,
     isOvertime: payload.isWeekend // Mapping isWeekend (from form) to isOvertime (store)
+  })
+  
+  console.log('[Index Page] Save completed, current store state', {
+    totalEntries: store.entries.length,
+    todaysEntries: todaysEntries.value.length
   })
 }
 </script>
