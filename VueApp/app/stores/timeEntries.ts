@@ -1,17 +1,25 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-
-export interface TimeEntry {
-  id: string
-  startTime: number // timestamp
-  endTime?: number // timestamp
-  date: string // YYYY-MM-DD
-  tasks?: string
-  isOvertime?: boolean
-}
+import { liveQuery } from 'dexie'
+import { useDB } from '@/composables/useDB'
+import type { TimeEntry } from '@/utils/db'
 
 export const useTimeEntriesStore = defineStore('timeEntries', () => {
+  const { db } = useDB() || {}
   const entries = ref<TimeEntry[]>([])
+
+  // Initialize live query if client-side and db is available
+  if (process.client && db) {
+    liveQuery(() => db.timeEntries.toArray())
+      .subscribe({
+        next: (data) => {
+          entries.value = data
+        },
+        error: (err) => {
+          console.error('[TimeEntries Store] Live query error:', err)
+        }
+      })
+  }
 
   // Debug logging helper
   const logDebug = (action: string, data?: any) => {
@@ -19,45 +27,29 @@ export const useTimeEntriesStore = defineStore('timeEntries', () => {
     console.log(`[TimeEntries Store] ${timestamp} - ${action}`, data || '')
   }
 
-  // Log initial state
-  logDebug('Store initialized', { entriesCount: entries.value.length })
-
   // Actions
-  const addEntry = (entry: Omit<TimeEntry, 'id'>) => {
-    const newEntry = {
-      ...entry,
-      id: crypto.randomUUID()
+  const addEntry = async (entry: Omit<TimeEntry, 'id'>) => {
+    if (!db) return
+
+    try {
+      const id = await db.timeEntries.add(entry as TimeEntry)
+      logDebug('Entry added successfully', { id, date: entry.date })
+      return id
+    } catch (error) {
+      console.error('[TimeEntries Store] Failed to add entry:', error)
+      throw error
     }
-    logDebug('Adding new entry', { 
-      id: newEntry.id, 
-      date: newEntry.date,
-      startTime: new Date(newEntry.startTime).toLocaleString(),
-      endTime: newEntry.endTime ? new Date(newEntry.endTime).toLocaleString() : 'N/A'
-    })
-    entries.value.push(newEntry)
-    logDebug('Entry added successfully', { 
-      totalEntries: entries.value.length,
-      allEntries: entries.value.map(e => ({ id: e.id, date: e.date }))
-    })
   }
 
-  const updateEntry = (id: string, updates: Partial<TimeEntry>) => {
-    logDebug('Updating entry', { id, updates })
-    const index = entries.value.findIndex(e => e.id === id)
-    if (index !== -1) {
-      const currentEntry = entries.value[index]
-      if (currentEntry) {
-        const before = { ...currentEntry }
-        entries.value[index] = { ...currentEntry, ...updates } as TimeEntry
-        logDebug('Entry updated successfully', { 
-          id,
-          before: { date: before.date, startTime: new Date(before.startTime).toLocaleString() },
-          after: { date: entries.value[index]!.date, startTime: new Date(entries.value[index]!.startTime).toLocaleString() },
-          totalEntries: entries.value.length
-        })
-      }
-    } else {
-      logDebug('Entry not found for update', { id, availableIds: entries.value.map(e => e.id) })
+  const updateEntry = async (id: string, updates: Partial<TimeEntry>) => {
+    if (!db) return
+
+    try {
+      await db.timeEntries.update(id, updates)
+      logDebug('Entry updated successfully', { id })
+    } catch (error) {
+      console.error('[TimeEntries Store] Failed to update entry:', error)
+      throw error
     }
   }
 
@@ -74,36 +66,31 @@ export const useTimeEntriesStore = defineStore('timeEntries', () => {
     }, 0)
   }
 
-  const saveEntryForDay = (date: string, data: Omit<TimeEntry, 'id' | 'date'>) => {
-    logDebug('saveEntryForDay called', { 
-      date, 
-      data: {
-        startTime: new Date(data.startTime).toLocaleString(),
-        endTime: data.endTime ? new Date(data.endTime).toLocaleString() : 'N/A',
-        tasks: data.tasks,
-        isOvertime: data.isOvertime
-      }
-    })
+  const saveEntryForDay = async (date: string, data: Omit<TimeEntry, 'id' | 'date'>) => {
+    if (!db) return
+
+    logDebug('saveEntryForDay called', { date, data })
+    
+    // Check if entry exists for this day (logic preserved from original)
+    // Note: This logic assumes one entry per day or updates the first one found.
+    // Ideally should be more robust, but kept consistent with legacy behavior for now.
     const dayEntries = getEntriesForDay(date)
+    
     if (dayEntries.length > 0) {
-      // For now, we update the first entry found for that day to match requested behavior
       const firstEntry = dayEntries[0]
-      if (firstEntry) {
-        logDebug('Existing entry found for date, updating', { date, entryId: firstEntry.id })
-        updateEntry(firstEntry.id, data)
+      if (firstEntry && firstEntry.id) {
+        logDebug('Existing entry found, updating', { id: firstEntry.id })
+        await updateEntry(firstEntry.id, data)
       }
     } else {
-      logDebug('No existing entry for date, creating new', { date })
-      addEntry({ ...data, date })
-    }
-    
-    // Verify localStorage after save
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const stored = window.localStorage.getItem('timeEntries')
-      logDebug('localStorage verification after save', { 
-        hasData: !!stored,
-        dataLength: stored?.length || 0,
-        preview: stored?.substring(0, 100)
+      logDebug('No existing entry, creating new')
+      await addEntry({
+        ...data,
+        date,
+        autoGenerated: false,
+        isOvertime: data.isOvertime || false,
+        tasks: data.tasks || '',
+        modifiedAt: Date.now()
       })
     }
   }
@@ -116,14 +103,5 @@ export const useTimeEntriesStore = defineStore('timeEntries', () => {
     getEntriesForDay,
     getTotalDurationForDay
   }
-}, {
-  persist: true,
-  // Hydration hook - called when store is restored from localStorage
-  onHydrate(ctx) {
-    console.log('[TimeEntries Store] Hydrating from localStorage', {
-      key: 'timeEntries',
-      entriesCount: ctx.store.entries?.length || 0,
-      entries: ctx.store.entries?.map((e: TimeEntry) => ({ id: e.id, date: e.date }))
-    })
-  }
 })
+

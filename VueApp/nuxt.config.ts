@@ -10,11 +10,16 @@ export default defineNuxtConfig({
     preset: 'static'
   },
 
+  runtimeConfig: {
+    public: {
+      dexieCloudUrl: process.env.NUXT_PUBLIC_DEXIE_CLOUD_URL || ''
+    }
+  },
+
   modules: [
     '@vite-pwa/nuxt',
     '@pinia/nuxt',
-    '@nuxtjs/tailwindcss',
-    'pinia-plugin-persistedstate/nuxt'
+    '@nuxtjs/tailwindcss'
   ],
 
   pwa: {

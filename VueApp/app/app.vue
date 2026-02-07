@@ -10,6 +10,7 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount } from 'vue'
 import { debugStorage } from '@/utils/debugStorage'
+import { migrateStorage } from '@/utils/migrateStorage'
 
 // Configure PWA icons and meta tags
 useHead({
@@ -26,7 +27,7 @@ useHead({
 })
 
 // Apply dark mode globally
-onMounted(() => {
+onMounted(async () => {
   document.documentElement.classList.add('dark')
   
   // Initialize debugging
@@ -35,18 +36,22 @@ onMounted(() => {
   console.log('='.repeat(60))
   console.log('Time:', new Date().toLocaleString())
   console.log('User Agent:', navigator.userAgent)
-  console.log('localStorage available:', typeof localStorage !== 'undefined')
+  console.log('IndexedDB available:', !!window.indexedDB)
+
+  // Run migration from localStorage to IndexedDB
+  try {
+    await migrateStorage()
+  } catch (e) {
+    console.error('Migration failed:', e)
+  }
   
   // Log initial storage state
   debugStorage.logStorageState()
   
-  // Start monitoring localStorage changes
-  debugStorage.watchStorage()
-  
   // Verify data integrity
-  const isValid = debugStorage.verifyIntegrity()
+  const isValid = await debugStorage.verifyIntegrity()
   if (!isValid) {
-    console.warn('⚠️ No valid data found in localStorage - this is normal on first launch')
+    console.warn('⚠️ No valid data found in IndexedDB - this is normal on first launch')
   }
   
   console.log('='.repeat(60))
