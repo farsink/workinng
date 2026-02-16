@@ -26,7 +26,8 @@
       <div 
         v-for="segment in segments" 
         :key="segment.id"
-        class="absolute h-8 bg-primary rounded-lg shadow-[0_0_15px_rgba(236,218,19,0.3)] flex items-center justify-center group cursor-pointer transition-all hover:brightness-110 z-10"
+        class="absolute h-8 rounded-lg shadow-[0_0_15px_rgba(236,218,19,0.3)] flex items-center justify-center group cursor-pointer transition-all hover:brightness-110 z-10"
+        :class="segment.isOvertime ? 'bg-error shadow-[0_0_15px_rgba(255,0,0,0.3)]' : 'bg-primary'"
         :style="{
           left: `${segment.startPercent}%`,
           width: `${segment.widthPercent}%`
@@ -90,7 +91,8 @@ const segments = computed(() => {
       startPercent: (startMinutes / totalDayMinutes) * 100,
       widthPercent: ((endMinutes - startMinutes) / totalDayMinutes) * 100,
       startTime: formatTime(start),
-      endTime: formatTime(end)
+      endTime: formatTime(end),
+      isOvertime: entry.isOvertime
     }
   })
 })

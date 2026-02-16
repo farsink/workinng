@@ -42,9 +42,37 @@ const todaysDuration = computed(() => store.getTotalDurationForDay(selectedDate.
 
 const openAddModal = (entryToEdit?: any) => {
   // If entryToEdit has an id, it's a real entry from the timeline.
-  // Otherwise (like clicking the + button), it's a new entry (null).
-  const entry = entryToEdit && entryToEdit.id ? entryToEdit : null
-  addModal.value?.open(entry)
+  if (entryToEdit && entryToEdit.id) {
+    addModal.value?.open(entryToEdit)
+    return
+  }
+
+  // Otherwise (like clicking the + button), calculate the next available slot
+  const entries = todaysEntries.value || []
+  let nextStartTime = null
+  let nextEndTime = null
+  
+  if (entries.length > 0) {
+    // Find the entry with the latest end time
+    // Sort by end time just to be safe, though they should be sorted
+    const sortedDetails = [...entries].sort((a, b) => a.endTime - b.endTime)
+    const lastEntry = sortedDetails[sortedDetails.length - 1]
+    
+    if (lastEntry) {
+        // Start next entry at the end of the last one
+        nextStartTime = lastEntry.endTime
+        // Default duration 1 hour
+        nextEndTime = nextStartTime + (60 * 60 * 1000)
+    }
+  }
+
+  // Pass a "draft" entry with calculated times but no ID
+  const draftEntry = nextStartTime ? {
+      startTime: nextStartTime,
+      endTime: nextEndTime
+  } : null
+
+  addModal.value?.open(draftEntry)
 }
 
 const handleSelectDay = (date: string) => {

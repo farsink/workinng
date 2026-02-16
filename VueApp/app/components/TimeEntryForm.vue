@@ -13,7 +13,7 @@
         <label class="text-[#8E8E93] text-xs font-bold tracking-[0.15em] mb-4">START TIME</label>
         <div class="flex items-center gap-2">
            <!-- Hours -->
-           <div class="h-32 w-16 overflow-y-auto snap-y snap-mandatory no-scrollbar text-center relative pointer-events-auto" ref="startHourRef">
+           <div class="h-32 w-16 overflow-y-auto snap-y snap-mandatory no-scrollbar text-center relative pointer-events-auto scroll-smooth" ref="startHourRef">
               <div class="h-10"></div> <!-- Spacer -->
               <div 
                 v-for="h in 24" 
@@ -30,7 +30,7 @@
            <span class="text-[#3A3A3C] text-2xl mb-1">:</span>
 
            <!-- Minutes -->
-           <div class="h-32 w-16 overflow-y-auto snap-y snap-mandatory no-scrollbar text-center relative pointer-events-auto">
+           <div class="h-32 w-16 overflow-y-auto snap-y snap-mandatory no-scrollbar text-center relative pointer-events-auto scroll-smooth" ref="startMinuteRef">
               <div class="h-10"></div> <!-- Spacer -->
               <div 
                 v-for="m in minuteOptions" 
@@ -51,7 +51,7 @@
         <label class="text-[#8E8E93] text-xs font-bold tracking-[0.15em] mb-4">END TIME</label>
          <div class="flex items-center gap-2">
            <!-- Hours -->
-           <div class="h-32 w-16 overflow-y-auto snap-y snap-mandatory no-scrollbar text-center relative pointer-events-auto">
+           <div class="h-32 w-16 overflow-y-auto snap-y snap-mandatory no-scrollbar text-center relative pointer-events-auto scroll-smooth" ref="endHourRef">
               <div class="h-10"></div> <!-- Spacer -->
               <div 
                 v-for="h in 24" 
@@ -68,7 +68,7 @@
            <span class="text-[#3A3A3C] text-2xl mb-1">:</span>
 
            <!-- Minutes -->
-           <div class="h-32 w-16 overflow-y-auto snap-y snap-mandatory no-scrollbar text-center relative pointer-events-auto">
+           <div class="h-32 w-16 overflow-y-auto snap-y snap-mandatory no-scrollbar text-center relative pointer-events-auto scroll-smooth" ref="endMinuteRef">
               <div class="h-10"></div> <!-- Spacer -->
               <div 
                 v-for="m in minuteOptions" 
@@ -160,7 +160,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, nextTick, onMounted } from 'vue';
 
 const props = defineProps<{
   initialData?: any;
@@ -184,6 +184,12 @@ const startMinute = ref(0);
 const endHour = ref(17);
 const endMinute = ref(0); 
 const minuteOptions = [0, 15, 30, 45];
+
+// Refs for scroll containers
+const startHourRef = ref<HTMLElement | null>(null);
+const startMinuteRef = ref<HTMLElement | null>(null);
+const endHourRef = ref<HTMLElement | null>(null);
+const endMinuteRef = ref<HTMLElement | null>(null);
 
 // Other form state
 const isOvertime = ref(false);
@@ -248,6 +254,24 @@ const formatOvertime = (minutes: number) => {
 // Helpers
 const formatNumber = (n: number) => String(n).padStart(2, '0');
 
+const scrollToSelected = () => {
+    // Each item is 48px high (h-12). 
+    // We want to center it, so we need to account for container height too, 
+    // but the spacer logic simplifies it to just index * 48
+    
+    // Helper to scroll a container
+    const scrollContainer = (container: HTMLElement | null, index: number) => {
+        if (!container) return;
+        container.scrollTop = index * 48;
+    };
+
+    scrollContainer(startHourRef.value, startHour.value);
+    scrollContainer(startMinuteRef.value, minuteOptions.indexOf(startMinute.value));
+    
+    scrollContainer(endHourRef.value, endHour.value);
+    scrollContainer(endMinuteRef.value, minuteOptions.indexOf(endMinute.value));
+};
+
 // Save
 const saveEntry = () => {
     const totalHours = calculatedDurationMinutes.value / 60;
@@ -267,7 +291,7 @@ const saveEntry = () => {
 
 const hydrate = (data: any) => {
     if (!data) {
-        // Reset form for new entry
+        // Reset form for new entry (completely blank)
         entryId.value = null;
         
         // Use selectedDate if provided, otherwise use today
@@ -287,6 +311,31 @@ const hydrate = (data: any) => {
         notes.value = '';
         isOvertime.value = false;
         return;
+    } else if (!data.id) {
+        // New entry with pre-calculated times (Draft mode)
+        entryId.value = null; // Ensure ID is null so it saves as new
+        
+        if (props.selectedDate) {
+            date.value = new Date(props.selectedDate);
+        }
+
+        // Hydrate times from draft data if available
+        if (data.startTime) {
+            const d = new Date(data.startTime);
+            startHour.value = d.getHours();
+            startMinute.value = d.getMinutes();
+        }
+        
+        if (data.endTime) {
+            const d = new Date(data.endTime);
+            endHour.value = d.getHours();
+            endMinute.value = d.getMinutes();
+        }
+
+        // Reset other fields
+        notes.value = '';
+        isOvertime.value = false;
+        return; 
     }
     
     entryId.value = data.id || null;
@@ -315,8 +364,19 @@ const hydrate = (data: any) => {
 // Watch for initialData changes - ALWAYS call hydrate to reset form state
 watch(() => props.initialData, (newData) => {
     hydrate(newData)
+    // Scroll to position after DOM update
+    nextTick(() => {
+        scrollToSelected();
+    });
 }, { immediate: true })
 ;
+
+onMounted(() => {
+    // Initial scroll
+    nextTick(() => {
+        scrollToSelected();
+    });
+});
 
 </script>
 
