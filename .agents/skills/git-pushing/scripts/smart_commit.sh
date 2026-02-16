@@ -15,12 +15,21 @@ else
 fi
 
 # RUN BUILD CHECK
-echo "🔍 Running build check..."
-if npm run build; then
-    echo "✅ Build successful!"
+echo "🔍 Running build check in VueApp directory..."
+if [ -d "VueApp" ]; then
+    if (cd VueApp && npm run build); then
+        echo "✅ Build successful!"
+    else
+        echo "❌ Build failed in VueApp! Aborting push."
+        exit 1
+    fi
 else
-    echo "❌ Build failed! Aborting push."
-    exit 1
+    if npm run build; then
+        echo "✅ Build successful!"
+    else
+        echo "❌ Build failed! Aborting push."
+        exit 1
+    fi
 fi
 
 # Get current branch name

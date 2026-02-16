@@ -30,4 +30,4 @@ With custom message:
 bash skills/git-pushing/scripts/smart_commit.sh "feat: add feature"
 ```
 
-Script handles: staging, conventional commit message, Claude footer, **automatic build verification (`npm run build`)**, and push with -u flag.
+Script handles: staging, conventional commit message, Claude footer, **automatic build verification** (aware of subdirectories like `VueApp`), and push with -u flag.
