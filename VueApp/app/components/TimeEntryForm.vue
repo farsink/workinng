@@ -86,7 +86,7 @@
     </div>
 
     <!-- Arrow Indicator (Visual only) -->
-    <div class="absolute top-[170px] left-1/2 -translate-x-1/2 text-[#3A3A3C]">
+    <div class="absolute top-[210px] left-1/2 -translate-x-1/2 text-[#3A3A3C]">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
         <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
       </svg>
