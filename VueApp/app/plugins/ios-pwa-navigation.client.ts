@@ -1,28 +1,31 @@
 /**
  * iOS PWA Standalone Navigation Fix
- *
- * On iOS, when a PWA is added to the home screen and run in standalone mode,
- * any navigation that triggers a full page reload (instead of a client-side
- * route push) breaks out of standalone mode and opens Safari.
- *
- * This plugin intercepts all <a> tag clicks on iOS standalone mode and forces
- * them through Vue Router for client-side navigation, preserving the app experience.
+ * 
+ * This plugin ensures ALL internal navigation stays within the PWA standalone window.
+ * It works by:
+ * 1. Intercepting any <a> tag clicks (including those from NuxtLink) in capture phase
+ * 2. Preventing the default browser navigation 
+ * 3. Using navigateTo() for client-side routing instead
+ * 
+ * This is needed because iOS processes <a href="..."> at the native OS level
+ * BEFORE JavaScript event handlers fire, causing Safari to open.
  */
-export default defineNuxtPlugin((nuxtApp) => {
+export default defineNuxtPlugin(() => {
   // Only run on client side
   if (!import.meta.client) return
 
-  // Check if running on iOS in standalone PWA mode
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
-  const isStandalone = ('standalone' in navigator) && (navigator as any).standalone === true
+  // Check if running in standalone PWA mode (iOS or Android)
+  const isStandalone = 
+    // iOS check
+    (('standalone' in navigator) && (navigator as any).standalone === true) ||
+    // Android/general check
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
 
-  if (!isIOS || !isStandalone) return
+  if (!isStandalone) return
 
   const router = useRouter()
 
-  // Intercept all click events on the document
   document.addEventListener('click', (event: MouseEvent) => {
-    // Find if the click was on or inside an <a> tag
     const target = event.target as HTMLElement
     const anchor = target.closest('a') as HTMLAnchorElement | null
 
@@ -31,34 +34,28 @@ export default defineNuxtPlugin((nuxtApp) => {
     const href = anchor.getAttribute('href')
     if (!href) return
 
-    // Skip external links, mailto, tel, etc.
-    if (
-      href.startsWith('http://') ||
-      href.startsWith('https://') ||
-      href.startsWith('mailto:') ||
-      href.startsWith('tel:') ||
-      href.startsWith('#') ||
-      anchor.getAttribute('target') === '_blank'
-    ) return
+    // Get the full URL to compare origins
+    const url = new URL(href, window.location.origin)
+    
+    // Skip external links (different origin)
+    if (url.origin !== window.location.origin) return
+    
+    // Skip special protocols
+    if (['mailto:', 'tel:', 'sms:', 'blob:', 'data:'].some(p => href.startsWith(p))) return
+    
+    // Skip target="_blank" links
+    if (anchor.getAttribute('target') === '_blank') return
+    
+    // Skip download links
+    if (anchor.hasAttribute('download')) return
 
-    // Skip if it's already being handled by a router-link
-    // (NuxtLink sets data-v-* attributes and handles clicks internally,
-    // but we need to make sure iOS doesn't intercept before Vue Router)
+    // This is an internal link — prevent browser navigation and use router
+    event.preventDefault()
+    event.stopPropagation()
+    event.stopImmediatePropagation()
 
-    // Check if it's an internal route
-    try {
-      const resolved = router.resolve(href)
-      if (resolved.name === undefined && resolved.matched.length === 0) return
-
-      // Prevent default browser navigation (which would open Safari)
-      event.preventDefault()
-      event.stopPropagation()
-
-      // Navigate via Vue Router (client-side, keeps standalone mode)
-      router.push(href)
-    } catch {
-      // If router can't resolve it, let the browser handle it
-      return
-    }
-  }, true) // Use capture phase to intercept before other handlers
+    // Use the pathname for navigation (strips origin)
+    const path = url.pathname + url.search + url.hash
+    navigateTo(path)
+  }, true) // Capture phase — runs before ANY other click handlers
 })

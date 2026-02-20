@@ -63,7 +63,7 @@ export default defineNuxtConfig({
     workbox: {
       navigateFallback: '/',
       navigateFallbackDenylist: [/^\/api\//],
-      globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
+      globPatterns: ['**/*.{js,css,png,svg,ico}'],
       runtimeCaching: [
         {
           urlPattern: ({ request }) => request.destination === 'image',
