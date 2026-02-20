@@ -10,6 +10,13 @@ export default defineNuxtConfig({
     preset: 'static'
   },
 
+  // Enable hash mode routing for iOS PWA standalone mode fix
+  router: {
+    options: {
+      hashMode: true
+    }
+  },
+
   runtimeConfig: {
     public: {
       dexieCloudUrl: process.env.NUXT_PUBLIC_DEXIE_CLOUD_URL || ''
