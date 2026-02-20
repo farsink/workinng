@@ -32,6 +32,7 @@ export default defineNuxtConfig({
       background_color: '#030303',
       display: 'standalone',
       start_url: '/',
+      scope: '/',
       icons: [
         {
           src: '/icon-192.png',
@@ -61,6 +62,7 @@ export default defineNuxtConfig({
     },
     workbox: {
       navigateFallback: '/',
+      navigateFallbackDenylist: [/^\/api\//],
       globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
       runtimeCaching: [
         {
